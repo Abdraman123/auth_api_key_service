@@ -284,75 +284,6 @@ alembic history
 6. **Rate limiting** - Add in production (e.g., with nginx)
 7. **Monitor key usage** - Check `last_used_at` timestamps
 
-## Production Deployment
-
-### Using Docker
-
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Install UV
-RUN pip install uv
-
-# Copy files
-COPY . .
-
-# Install dependencies
-RUN uv pip install --system .
-
-# Run migrations
-RUN alembic upgrade head
-
-# Start server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### Using Docker Compose
-
-```yaml
-version: '3.8'
-
-services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: auth_api_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-  
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/auth_api_db
-    depends_on:
-      - db
-
-volumes:
-  postgres_data:
-```
-
-## Troubleshooting
-
-### Database Connection Issues
-- Verify PostgreSQL is running: `pg_isready`
-- Check DATABASE_URL in `.env`
-- Ensure database exists: `createdb auth_api_db`
-
-### Migration Errors
-- Reset migrations: `alembic downgrade base`
-- Check alembic/versions/ for conflicts
-- Verify models are imported in `alembic/env.py`
-
-### Authentication Failures
-- Check token expiration
-- Verify SECRET_KEY hasn't changed
-- Ensure proper Authorization header format
 
 ## Contributing
 
@@ -366,12 +297,3 @@ volumes:
 
 MIT License - feel free to use in your projects!
 
-## Support
-
-For issues and questions:
-- GitHub Issues: [Create an issue]
-- Documentation: Check `/docs` endpoint
-
----
-
-Built with ❤️ using FastAPI and UV
