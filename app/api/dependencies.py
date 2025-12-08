@@ -111,7 +111,7 @@ def get_api_key_auth(
 
 
 def get_current_user_or_api_key(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
     x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
     db: Session = Depends(get_db)
 ) -> tuple[Optional[User], Optional[APIKey]]:
@@ -129,19 +129,20 @@ def get_current_user_or_api_key(
     Raises:
         HTTPException: If neither authentication method is valid
     """
-    # Try JWT first
+    # Try API key first
+    if x_api_key:
+        try:
+            api_key_service = APIKeyService(db)
+            api_key = api_key_service.validate_api_key(x_api_key)
+            return (None, api_key)
+        except HTTPException:
+            pass
+    
+    # Try JWT second
     if credentials:
         try:
             user = get_current_user(credentials, db)
             return (user, None)
-        except HTTPException:
-            pass
-    
-    # Try API key
-    if x_api_key:
-        try:
-            api_key = get_api_key_auth(x_api_key, db)
-            return (None, api_key)
         except HTTPException:
             pass
     
